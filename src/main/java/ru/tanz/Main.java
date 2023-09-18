@@ -1,5 +1,6 @@
 package ru.tanz;
 
+import lombok.val;
 import ru.tanz.lab4.transport.car.Car;
 import ru.tanz.lab4.transport.driver.CarDriver;
 import ru.tanz.lab4.transport.driver.ServiceCarDriver;
@@ -8,11 +9,10 @@ import ru.tanz.lab5.Container;
 import ru.tanz.lab7.Codable;
 import ru.tanz.lab7.MorseCode;
 import ru.tanz.lab7.scheme.Scheme;
+import ru.tanz.lab7.student.Student;
 
-import java.util.HashSet;
-import java.util.InputMismatchException;
-import java.util.Scanner;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 public class Main {
 
@@ -242,13 +242,36 @@ public class Main {
 //        } while (choice != 3);
 //    }
 
-    public static void main(String[] args) {
-        Codable codable = new MorseCode(Scheme.RUSSIAN);
-        String text = "Привет, мир!";
-        System.out.println(text);
-        System.out.println(codable.encode(text));
-        System.out.println(codable.decode(codable.encode(text)));
 
+    //lab7 (1)
+//    public static void main(String[] args) {
+//        Codable codable = new MorseCode(Scheme.RUSSIAN);
+//        String text = "Привет, мир!";
+//        System.out.println(text);
+//        System.out.println(codable.encode(text));
+//        System.out.println(codable.decode(codable.encode(text)));
+//    }
+
+
+    public static void main(String[] args) throws IOException {
+
+        File file = new File("file.txt");
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        List<Student> studentList = new ArrayList<>();
+        StringBuilder stringBuilder = new StringBuilder();
+
+        br.lines().forEach(string -> {
+            val strings = string.split(" ");
+            if (strings.length == 3){
+                studentList.add(new Student(strings[0], strings[1], strings[2]));
+            } else {
+                studentList.forEach(student -> {
+                    if (student.getSpeciality().equalsIgnoreCase(string))
+                        stringBuilder.append(student.getSurname()).append(", ");
+                });
+            }
+        });
+        System.out.println(stringBuilder);
 
     }
 
