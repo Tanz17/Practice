@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+}
+
+group = 'ru.tanz'
+version = '1.0'
+
+
+repositories {
+    mavenCentral()
+}
+
+compileJava.options.encoding = 'UTF-8' // устанавливает кодировку для компилируемого кода
+javadoc.options.encoding = 'UTF-8' // устанавливает кодировку для генерируемой документации
+compileTestJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    compileOnly("org.projectlombok:lombok:1.18.28")
+    annotationProcessor("org.projectlombok:lombok:1.18.28")
+}
+
+
