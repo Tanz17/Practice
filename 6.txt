@@ -1,0 +1,438 @@
+#include <cstdio>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <iomanip>
+#include <windows.h>
+
+using namespace std;
+using vRow = vector<int>;
+using vMat = vector<vRow>;
+
+void pause()
+{
+	string line = "";
+	while (line != "n")
+	{
+		cout << "Введите n, чтобы продолжить => ";
+		cin >> line;
+	}
+}
+
+// Заполение для x, y и z
+vRow init(int b)
+{
+	vRow A(8);
+	int g = 0;
+	int h = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		if (h == b)
+		{
+			h = 0;
+			if (g == 1) g = 0;
+			else g = 1;
+		}
+		A[i] = g;
+		h++;
+	}
+	return A;
+}
+
+string sym(int i)
+{
+	string sym = "";
+	if (i == 1) sym = "\\/";
+	else if (i == 2) sym = "/\\";
+	else if (i == 3) sym = "=>";
+	else if (i == 4) sym = "<=>";
+	else if (i == 5) sym = "(+)";
+	return sym;
+}
+
+// Вывод таблицы истинности
+void Display(vMat Table, vRow L)
+{
+	string l1 = "y" + sym(L[0]) + "z";
+	string l2 = "x" + sym(L[1]) + "y";
+	string l3 = "(" + l1 + ")" + sym(L[2]) + "(" + l2 + ")";
+	string l4 = "F";
+	string endLine = "|---|---|---|";
+
+	for (int i = 0; i < l1.size() + 2; i++) endLine += "-";
+	endLine += "|";
+	for (int i = 0; i < l2.size() + 2; i++) endLine += "-";
+	endLine += "|";
+	for (int i = 0; i < l3.size() + 2; i++) endLine += "-";
+	endLine += "|";
+	for (int i = 0; i < l4.size() + 2; i++) endLine += "-";
+	endLine += "|";
+
+	string unk = "| x | y | z | " + l1 + " | " + l2 + " | " + l3 + " | " + l4 + " |";
+
+	cout << endLine << "\n";
+	cout << unk << "\n";
+	cout << endLine << "\n";
+
+	// Тут матрица перевернута вертикально
+	for (int i = 0; i < 8; i++)
+	{
+		cout << "|";
+		for (int j = 0; j < 7; j++)
+		{
+			size_t d = 2;
+			if (j == 3) d += l1.size();
+			if (j == 4) d += l2.size();
+			if (j == 5) d += l3.size();
+			if (j == 6) d += l4.size();
+
+			size_t d_start = 0;
+			size_t d_end = 0;
+			if (d % 2 == 0) {
+				d_start = d / 2 - 1;
+				d_end = d / 2;
+			}
+			else {
+				d_start = (d - 1) / 2;
+				d_end = d_start;
+			}
+
+
+			if (j < 3) cout << " " << left << setw(2) << Table[j][i] << "|";
+			else {
+				for (int k = 0; k < d_start; k++) cout << " ";
+				cout << Table[j][i];
+				for (int k = 0; k < d_end; k++) cout << " ";
+				cout << "|";
+			}
+		}
+		cout << endl;
+	}
+	cout << endLine << "\n";
+}
+
+// Лог операции на векторах. Осуществляются между 2 столбцами Таблицы Истиности
+// Дизъюнкция
+vRow dis(vRow A, vRow B)
+{
+	vRow C(8);
+	for (int i = 0; i < 8; i++)
+	{
+		C[i] = A[i] + B[i];
+		if (C[i] == 2) C[i] = 1;
+	}
+	return C;
+}
+// Конъюнкция
+vRow kon(vRow A, vRow B)
+{
+	vRow C(8);
+	for (int i = 0; i < 8; i++)
+	{
+		C[i] = A[i] * B[i];
+	}
+	return C;
+}
+// Импликация
+vRow imp(vRow A, vRow B)
+{
+	vRow C(8);
+	for (int i = 0; i < 8; i++)
+	{
+		if (A[i] == 1 && B[i] == 0) C[i] = 0;
+		else C[i] = 1;
+	}
+	return C;
+}
+// Эквивалентность
+vRow ekv(vRow A, vRow B)
+{
+	vRow C(8);
+	for (int i = 0; i < 8; i++)
+	{
+		if (A[i] == B[i]) C[i] = 1;
+		else C[i] = 0;
+	}
+	return C;
+}
+// Сложение по модулю 2
+vRow nekv(vRow A, vRow B)
+{
+	vRow C(8);
+	for (int i = 0; i < 8; i++)
+	{
+		if (A[i] == B[i]) C[i] = 0;
+		else C[i] = 1;
+	}
+	return C;
+}
+// Сложение по модулю 2 для конкретных элементов
+int nekv1(int A, int B)
+{
+	int C = 0;
+	if (A == B) C = 0;
+	else C = 1;
+	return C;
+}
+// Комутатор, получает на вход 2 столбца ТИ и номер лог операции,
+// а возвращает результат операции
+vRow comp(vRow A, vRow B, int num)
+{
+	vRow C(8);
+	if (num == 1) C = dis(A, B);
+	if (num == 2) C = kon(A, B);
+	if (num == 3) C = imp(A, B);
+	if (num == 4) C = ekv(A, B);
+	if (num == 5) C = nekv(A, B);
+	return C;
+}
+
+// Функции заданий
+// Задание №1 - построение таблицы истинности для F 
+vMat TI()
+{
+	vRow L;
+	cout << "F = x Л4 ((y Л1 z) Л3 (x Л2 y)) \n\n";
+	cout << "Выберите операции: \n";
+	cout << "1) Дизъюнкция \n";
+	cout << "2) Конъюнкция \n";
+	cout << "3) Импликация \n";
+	cout << "4) Эквивалентность \n";
+	cout << "5) Сложение по модулю 2 \n";
+
+	// Инициализация лог операций
+	int repeat = 1;
+	do
+	{
+		L.clear();
+
+		for (int i = 0; i < 4; i++)
+		{
+			int k = 0;
+			cout << "\nВведите номер операции Л" << i + 1 << " => ";
+			cin >> k;
+			L.push_back(k);
+			cin.ignore(cin.rdbuf()->in_avail());
+		}
+
+		cout << "\nВведите 1, чтобы повторить ввод всех функций, иначе любую другую цифру: \n";
+		cin >> repeat;
+	} while (repeat == 1);
+
+	vMat Table(7, vRow(8, 0));
+	// Создание ТИ
+	for (int i = 0; i < 7; i++) Table[i].resize(8);
+	int flag = 1;
+
+	// Инициализация ТИ
+	Table[0] = init(4);
+	Table[1] = init(2);
+	Table[2] = init(1);
+	Table[3] = comp(Table[1], Table[2], L[0]);
+	Table[4] = comp(Table[0], Table[1], L[1]);
+	Table[5] = comp(Table[3], Table[4], L[2]);
+	Table[6] = comp(Table[0], Table[5], L[3]);
+	cout << "\n";
+	cout << "\tТаблица истинности: \n";
+	Display(Table, L);
+
+	// Возвращаем конечную ТИ
+	return Table;
+}
+
+// Задание №2 - Построить СДНФ(F), СКНФ(F)
+// СДНФ(F)
+void SDNF(vMat Table)
+{
+	cout << "F(x,y,z) = ";
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (Table.back()[i] == 1)
+		{
+			cout << "(";
+			if (Table[0][i] == 0) cout << "¬";
+			cout << "x/\\";
+			if (Table[1][i] == 0) cout << "¬";
+			cout << "y/\\";
+			if (Table[2][i] == 0) cout << "¬";
+			if (i == 7) cout << "z); \n";
+			else cout << "z) \\/ ";
+		}
+	}
+}
+// СКНФ(F)
+void SKNF(vMat Table)
+{
+	int count = 0;
+	for (int i = 0; i < 8; i++) if (Table.back()[i] == 0) count++;
+
+	cout << "F(x,y,z) = ";
+
+	for (int i = 0, j = 0; i < 8; i++)
+	{
+		if (Table.back()[i] == 0)
+		{
+			j++;
+			cout << "(";
+			if (Table[0][i] == 1) cout << "¬";
+			cout << "x\\/";
+			if (Table[1][i] == 1) cout << "¬";
+			cout << "y\\/";
+			if (Table[2][i] == 1) cout << "¬";
+			if (j == count) cout << "z); \n";
+			else cout << "z) /\\ ";
+		}
+	}
+}
+
+// Задание №3 - построить полином Жегалкина для F
+void polynomiaByZhegalkin(vMat Table, vRow& C)
+{
+	// Инициализация параметров
+	C[0] = Table[6][0];
+	C[1] = nekv1(C[0], Table[6][4]);
+	C[2] = nekv1(C[0], Table[6][2]);
+	C[3] = nekv1(C[0], Table[6][1]);
+	C[4] = nekv1(nekv1(C[0], C[1]), nekv1(C[2], Table[6][6]));
+	C[5] = nekv1(nekv1(C[0], C[1]), nekv1(C[3], Table[6][5]));
+	C[6] = nekv1(nekv1(C[0], C[2]), nekv1(C[3], Table[6][3]));
+	C[7] = nekv1(nekv1(nekv1(C[0], C[1]), nekv1(C[2], C[3])), nekv1(nekv1(C[4], C[5]), nekv1(C[6], Table[6][7])));
+
+	cout << "Полином Жегалкина созданый по ТИ : \n";
+	cout << "F(x,y,z) = " << C[0];
+	if (C[1] == 1) cout << " (+) x";
+	if (C[2] == 1) cout << " (+) y";
+	if (C[3] == 1) cout << " (+) z";
+	if (C[4] == 1) cout << " (+) xy";
+	if (C[5] == 1) cout << " (+) xz";
+	if (C[6] == 1) cout << " (+) yz";
+	if (C[7] == 1) cout << " (+) xyz;";
+	cout << "\n";
+}
+
+// Задание №4 - проверить принадлежность F классам Пост
+void belongingToPosts(vMat Table, vRow C)
+{
+	// Инициализировали все 5 классов отрицанием
+	bool T0 = false, T1 = false, S = false, M = false, L = false;
+	// Флажковая переменная
+	int flag = 0;
+
+	// Если значение F(0,0,0)=0, то F принадлежит Т0(Класс функций сохраняющих 0)
+	if (Table[6][0] == 0) T0 = true;
+	// Если значение F(1,1,1)=1, то F принадлежит Т1(Класс функций сохраняющих 1)
+	if (Table[6][7] == 1) T1 = true;
+
+	// Проверяем на симметрию. Ось симметрии проходит между F(3) и F(4) 
+	for (int i = 1; i < 5; i++)
+	{
+		if (Table[6][i - 1] == Table[6][8 - i])
+			// Если не симметрично запоминаем сей факт
+			flag = 1;
+	}
+
+	// Если F симметрична, то F принадлежит S(Класс самодвойственных функций)
+	if (flag == 0) S = true;
+	flag = 0;
+	int a = 0, b = 0;
+
+	// Проверяем на монотонность 
+	int hod = 8;
+	while (((hod /= 2) > 0) && (flag == 0))
+	{
+		int l = 0;
+		while (l < 8)
+		{
+			int q1 = 0, q2 = 0;
+			for (int i = 0; i < hod; i++)
+			{
+				q1 += Table[6][l];
+				q1 *= 10;
+				l++;
+			}
+			q1 /= 10;
+			for (int i = 0; i < hod; i++)
+			{
+				q2 += Table[6][l];
+				q2 *= 10;
+				l++;
+			}
+			q2 /= 10;
+			if (q1 > q2) flag = 1;
+		}
+	}
+
+	// Если F монотонна, то F принадлежит M(Класс монотонных функций)
+	if (flag == 0) M = true;
+	flag = 0;
+	for (int i = 4; i < 8; i++)
+	{
+		if (C[i] != 0)
+			flag = 1;
+	}
+
+	// L(Класс линейных функций)
+	if (flag == 0) L = true;
+
+	// Выводим результаты таблицей
+	cout << "Таблица результатов проверки классов поста: \n";
+	if (T0) cout << "T0: Да \n";
+	else cout << "T0: Нет \n";
+	if (T1) cout << "T1: Да \n";
+	else cout << "T1: Нет \n";
+	if (S) cout << "S: Да \n";
+	else cout << "S: Нет \n";
+	if (M) cout << "M: Да \n";
+	else cout << "M: Нет \n";
+	if (L) cout << "L: Да \n";
+	else cout << "L: Нет \n";
+}
+
+int main()
+{
+	setlocale(0, "");
+	system("color F0");
+
+	vMat Table;
+	int option = 1;
+
+	while (option == 1)
+	{
+		system("cls");
+		cout << "булевы функции \n";
+
+		cout << "Первое задание \n";
+		Table = TI();
+		cout << "\n";
+		pause();
+
+		cout << "\n\nВторое задание\n";
+		cout << "СДНФ \n";
+		SDNF(Table);
+		cout << "\nСКНФ \n";
+		SKNF(Table);
+		cout << "\n";
+		pause();
+
+		// Массив параметров для полинома Жегалкина
+		vRow C(8);
+		cout << "\n\nТретье задание \n";
+		polynomiaByZhegalkin(Table, C);
+		cout << "\n";
+		pause();
+
+		cout << "\n\nЧетвертое задание \n";
+		belongingToPosts(Table, C);
+
+		cout << "\n\nЖелаете начать заново? \n[1] - Да \n[любое другое] - Нет \n\n";
+		cout << "Введите номер пункта меню => ";
+		cin >> option;
+		// При вводе игнорит все символы кроме первого
+		cin.ignore(cin.rdbuf()->in_avail());
+	}
+
+	cout << "\n\nВы завершили работу программы! Спасибо за использование! \n";
+	pause();
+	return 0;
+}
