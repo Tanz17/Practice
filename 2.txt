@@ -1,0 +1,517 @@
+#include <iostream>
+#include <iomanip>
+#include <random>
+#include <ctime>
+#include <vector>
+#include <iterator>
+#include <cstdlib>
+#include <string>
+#include <array>
+#include <windows.h>
+using namespace std;
+
+const int n = 5; // Размерность матрицы
+using matrix = array<array<bool, n>, n>; // Матрица
+
+/* Класс - моё множество */
+class MySet {
+private:
+	vector<int> set;
+public:
+	/* Конструктор по умолчанию */
+	MySet() {}
+	/* Деструктор по умолчанию */
+	~MySet() {}
+	/* Возвращается размер множества */
+	int size() {
+		return set.size();
+	}
+	/* Проверяет наличие числа во множестве */
+	bool contains(int number) {
+		for (int el : set) if (el == number) return true; /* Число существует во множестве */
+		return false; /* Числа не существует во множестве */
+	}
+	/* Обмен значений двух множеств */
+	void swap(MySet a)
+	{
+		for (int i = 0; i < set.size(); i++) set[i] = a[i];
+	}
+	/* Вернуть копию числа под индеком */
+	int operator[] (int index) {
+		return set[index];
+	}
+	/* Добавить элемент в множество (c проверкой на совпадение)*/
+	void insert(int number) {
+		if (!contains(number)) set.push_back(number);
+		sort();
+	}
+	/* Дополняет монжество элементами другого множества */
+	void add(MySet col) {
+		for (int number : col.set) insert(number);
+		sort();
+	};
+	/* Вывети элементы множества на экран в виде строки */
+	string showToString() {
+		string str = "{ ";
+		for (int i = 0, end = size() - 1; i < size(); i++) {
+			str += to_string(set[i]);
+			if (i < end) str += ", ";
+		}
+		str += " }";
+		return str;
+	}
+	/* Пузырьковая сортировка */
+	void sort() {
+		int temp;
+		for (int i = size() - 1; i >= 1; i--)
+			for (int j = 0; j < i; j++)
+				if (set[j] > set[j + 1]) {
+					temp = set[j];
+					set[j] = set[j + 1];
+					set[j + 1] = temp;
+				}
+	}
+} m /* Заранее объявляем исходное множество M */;
+
+
+void pause();
+void menu(); // Вывод главного меню
+void getGreenStr(string str);	// Вывод зеленой строки
+void getRedStr(string str);		// Вывод красной строки
+int enterInRange(int, int); // Ввод числа из диапазона
+int rand(int, int); // Случайное целое число в диапазоне
+void fills(matrix&, bool(*)(int, int)); // Заполнение матицы определённым отношением
+void showMatrix(matrix); // Вывести на экран матрицу с размером 5x5
+bool relation(int, int); // Отношение №7
+void showLine(char); // Выводит строку вида "???????|?***?***?***?***?***??|", где *** - char
+void showLine(MySet); // Выводит строку вида "???????|?***?***?***?***?***??|", где *** - array
+
+matrix multiplication(const matrix, const matrix); // Произведение двух квадратных матриц на 5x5 элементов
+bool coin(); // Возвращает случайное bool значение;
+int rand(int, int); // Возвращает случайное число в диапазоне;
+void fills(matrix&); // Заполняет случайными bool значениями (функция по умолчанию);
+void showMatrixSimple(matrix); // Выводит только матрицу
+matrix intersection(const matrix, const matrix); // Пересечение двух квадратных матриц размером 5x5
+void addition(matrix&); // Инвертировать (дополнение) квадратную матрицу размером 5x5
+void transposed(matrix&); // Транспонировать квадратную матрицу размером 5x5
+void dual(matrix&); // Возвращает двойственную квадратную матрицу размером 5x5
+void PropertyValidation(const matrix); // Проверка свойств отношения
+bool is_Reflexivity(matrix); // Проверка отношения на рефлексивность
+bool is_AntiReflexivity(matrix); // Проверка отношения на антирефлексивность
+bool is_IrReflexivity(matrix); // Проверка отношения на иррефлексивность
+bool is_Simmetric(matrix); // Проверка отношения на симметричность
+bool is_AntiSimmetric(matrix); // Проверка отношения на антисимметричность
+bool is_ASimmetric(matrix); // Проверка отношения на ассиметричность
+bool is_Transetive(matrix); // Проверка отношения на транзитивность
+
+void allFunctionList();
+
+int main()
+{
+	system("color F0");
+	setlocale(LC_ALL, "Russian");
+	srand((unsigned int)time(NULL));
+
+
+	int min = -10, max = 10; /* По условию задания диапаззон [-10, 10] */
+	int option;
+	
+	cout << "Отношение R = { (x,y) E А^2 | x+y>3, x<y} \n";
+	/* инициализируем множество M 5-ю различными числами из диапаззона [-10, 10] */
+	for (int size = 5; m.size() < size; m.insert(rand(min, max)));
+	cout << "Сгенерированное множество М = " << m.showToString() << "\n";
+	
+	cout << "\n\n";
+
+	allFunctionList();
+
+	cout << "\n\n";
+
+	menu();
+	cin >> option;
+
+	while (option == 1 || option == 2)
+	{
+		if (option == 1)
+		{
+			/* инициализируем множество M 5-ю различными числами из диапаззона [-10, 10] */
+			MySet a;
+			for (int size = 5; a.size() < size; a.insert(rand(min, max)));
+			m.swap(a);
+			cout << "Вы перегенерировали множество М.\n";
+			cout << "Теперь множество М имеет вид: " << m.showToString() << endl;
+		}
+		else if (option == 2)
+		{
+			allFunctionList();
+		}
+
+		system("cls");
+		cout << "отношения \n";
+		menu();
+		cin >> option;
+	}
+
+	cout << "\n\nВы завершили работу программы! Спасибо за использование! \n\n";
+	system("pause");
+	return 0;
+}
+
+
+void pause()
+{
+	string line = "";
+	while (line != "m")
+	{
+		cout << "Введите m, чтобы продолжить -> ";
+		cin >> line;
+	}
+}
+void menu()
+{
+	
+	cout << "Что будем делать? \n";
+	cout << "[1] - Перегенерировать множество; \n";
+	cout << "[2] - Начать выполнение заданий; \n";
+	cout << "[любой символ] - Завершение работы; \n\n";
+
+	cout << "Введите номер пункта меню => ";
+}
+void getGreenStr(string str)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	/*Цвет символов - светло-зеленый. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 10));
+	cout << str;
+	/*Возвращаем Цвет символов - белый. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 0));
+}
+void getRedStr(string str)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	/*Цвет символов - светло-красный. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 12));
+	cout << str;
+	/*Возвращаем Цвет символов - белый. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 0));
+}
+
+void PropertyValidation(const matrix matrix)
+{
+	if (is_Reflexivity(matrix)) getGreenStr("[1] -> Свойство рефлексивности присутствует! \n");
+	else getRedStr("[1] -> Свойство рефлексивности отсутствует! \n");
+
+	if (is_AntiReflexivity(matrix)) getGreenStr("[2] -> Свойство антирефлексивности присутствует! \n");
+	else getRedStr("[2] -> Свойство антирефлексивности отсутствует! \n");
+
+	if (is_IrReflexivity(matrix)) getGreenStr("[3] -> Свойство иррефлексивности присутствует! \n");
+	else getRedStr("[3] -> Свойство иррефлексивности отсутствует! \n");
+
+	if (is_Simmetric(matrix)) getGreenStr("[4] -> Свойство симметричности присутствует! \n");
+	else getRedStr("[4] -> Свойство симметричности отсутствует! \n");
+
+	if (is_AntiSimmetric(matrix)) getGreenStr("[5] -> Свойство антисимметричности присутствует! \n");
+	else getRedStr("[5] -> Свойство антисимметричности отсутствует! \n");
+
+	if (is_ASimmetric(matrix)) getGreenStr("[6] -> Свойство асимметричности присутствует! \n");
+	else getRedStr("[6] -> Свойство асимметричности отсутствует! \n");
+
+	if (is_Transetive(matrix)) getGreenStr("[7] -> Свойство транзитивности присутствует! \n");
+	else getRedStr("[7] -> Свойство транзитивности отсутствует! \n");
+}
+bool is_Reflexivity(matrix rel)
+{
+	for (int i = 0; i < 5; i++)
+		if (!rel[i][i]) return false;
+
+	return true;
+}
+bool is_AntiReflexivity(matrix rel)
+{
+	for (int i = 0; i < 5; i++)
+		if (rel[i][i]) return false;
+
+	return true;
+}
+bool is_IrReflexivity(matrix rel)
+{
+	for (int i = 0; i < 5; i++)
+		if (rel[i][i]) return true;
+
+	return false;
+}
+bool is_Simmetric(matrix rel)
+{
+	for (int i = 0; i < 5; i++)
+		for (int j = 0; j < 5; j++)
+			if (rel[i][j] != rel[j][i]) return false;
+
+	return true;
+}
+bool is_AntiSimmetric(matrix rel)
+{
+	matrix rel_trans = rel;
+	transposed(rel_trans);
+	matrix rel_int = intersection(rel, rel_trans);
+
+	for (int i = 0; i < 5; i++)
+		for (int j = 0; j < 5; j++)
+			if (i != j && rel_int[i][j]) return false;
+
+	return true;
+}
+bool is_ASimmetric(matrix rel)
+{
+	return is_AntiReflexivity(rel) && is_AntiSimmetric(rel);
+}
+bool is_Transetive(matrix rel)
+{
+	matrix square = multiplication(rel, rel);
+
+	for (int i = 0; i < 5; i++)
+		for (int j = 0; j < 5; j++)
+
+			if (square[i][j] > rel[i][j]) return false;
+
+	return true;
+}
+
+void dual(matrix& array) {
+	transposed(array);
+	addition(array);
+} // Пятое задание
+void transposed(matrix& array) {
+	int temp;
+	for (int i = 0, size = 5; i < size; ++i) {
+		for (int j = i; j < size; ++j) {
+			temp = array[i][j];
+			array[i][j] = array[j][i];
+			array[j][i] = temp;
+		}
+	}
+} // Второе задание
+void addition(matrix& array) {
+	for (int i = 0, size = 5; i < size; i++)
+		for (int j = 0; j < size; j++)
+			array[i][j] = !array[i][j];
+} // Второе задание
+matrix intersection(const matrix a, const matrix b) {
+	matrix result;
+	for (int i = 0, size = 5; i < size; i++)
+		for (int j = 0; j < size; j++)
+			result[i][j] = a[i][j] * b[i][j];
+	return result;
+} // Шестое задание
+void showMatrixSimple(matrix array) {
+	// string line = " ---           ---";
+	// cout << line << endl;
+	for (int i = 0, size = 5, end = size - 1; i < size; i++) {
+		cout << setw(2) << "|";
+		for (int j = 0; j < size; j++)
+			cout << setw(2) << array[i][j] << (j < end ? ',' : ' ');
+		cout << "|\n";
+	}
+	// cout << line << endl;
+}
+matrix multiplication(const matrix a, const matrix b) {
+	matrix result;
+	for (int i = 0, size = 5; i < size; i++)
+		for (int j = 0; j < size; j++)
+			for (int z = 0; z < size; z++) {
+				result[i][j] = false;
+				for (int z = 0; z < size; z++)
+					result[i][j] = result[i][j] + a[i][z] * b[z][j];
+
+			}
+	return result;
+} // Четвёртое задание
+int enterInRange(int left, int right) {
+	int result;
+	cout << "Ожидвется ввод: ";
+	cin >> result;
+	if (result < left || result > right) {
+		cout << "Ошибка! Повторите ввод!" << endl;
+		return enterInRange(left, right);
+	}
+	return result;
+}
+int rand(int min, int max) {
+	int temp = (min > 0 ? max - min : abs(min) + max);
+	return rand() % temp + min;
+}
+bool coin() {
+	return (rand(1, 10) > 5 ? false : true); // Потомучто так надо
+}
+void fills(matrix& array) {
+	for (int i = 0, size = 5; i < size; i++)
+		for (int j = 0; j < size; j++)
+			array[i][j] = coin();
+}
+
+void fills(matrix& array, bool(*rel)(int, int)) {
+	for (int i = 0, size = 5; i < size; i++)
+		for (int j = 0; j < size; j++)
+			array[i][j] = rel(m[i], m[j]);
+}
+void showLine(char var) {
+	cout << setw(7) << " ";
+	for (int i = 0, size = 5; i < size; i++)
+		cout << setw(3) << var << ' ';
+	cout << "\n\n";
+}
+void showLine(MySet m) {
+	cout << setw(7) << " ";
+	for (int i = 0, size = 5; i < size; i++)
+		cout << setw(3) << m[i] << ' ';
+	cout << "\n";
+}
+void showMatrix(matrix array) {
+
+	/*
+
+		?????????**y?**y?**y?**y?**y?   0
+				?**|?**|?**|?**|?**|?   1
+				?**V?**V?**V?**V?**V?   2
+				---                ---  3
+		**x -> |?**1,**0,**1,**0,**1??| 4
+		**x -> |?**1,**0,**1,**0,**1??| 5
+		**x -> |?**1,**0,**1,**0,**1??| 6
+		**x -> |?**1,**0,**1,**0,**1??| 7
+		**x -> |?**1,**0,**1,**0,**1??| 8
+		**x -> |?**1,**0,**1,**0,**1??| 9
+				---                ---  10
+	*/
+
+	// string line = "        ---                ---";
+	for (int i = 0, size = 5, end = size - 1; i < 11; i++)
+		switch (i)
+		{
+		case 0:
+			showLine(m);
+			break;
+		case 1:
+			// showLine('|');
+			break;
+		case 2:
+			showLine('V');
+			break;
+		case 3:
+			// cout << line << endl;
+			break;
+		case 4:
+			for (int i = 0; i < size; i++) {
+				cout << setw(3) << m[i] << " > |";
+				for (int j = 0; j < size; j++)
+					cout << setw(3) << array[i][j] << (j < end ? ',' : ' ');
+				cout << "|\n";
+			}
+			break;
+		case 10:
+			// cout << line << endl;
+			break;
+		}
+}
+bool relation(int x, int y) {
+	if (x + y > 3 && x < y) return true;
+	else return false;
+}
+
+void allFunctionList()
+{
+	cout << "Множество М имеет вид: " << m.showToString() << endl;
+	cout << "R = { (x,y) E А^2 | x+y>3, x<y}. " << endl;
+	cout << "\n\n";
+
+	/*
+		Первое задание
+		Используется отношение:
+		7) R = { (x,y) "Принадлежит" А^2 | x+y>3, x<y }.
+	*/
+	matrix A;
+	fills(A, relation);
+	cout << "Первое задание\n";
+	showMatrix(A);
+
+	cout << "\n";
+	pause();
+	cout << "\n\n";
+
+	/*
+		Второе задание
+		Используется отношение:
+		7) R = { (x,y) "Принадлежит" А^2 | x+y>3, x<y }.
+	*/
+	matrix B = A;
+	addition(B);
+	cout << "Второе задание\n";
+	showMatrixSimple(B);
+
+	cout << "\n";
+	pause();
+	cout << "\n\n";
+
+	/*
+		Третье задание
+		Используется отношение:
+		7) R = { (x,y) "Принадлежит" А^2 | x+y>3, x<y }.
+	*/
+	matrix C = A;
+	transposed(C);
+	cout << "Третье задание\n";
+	showMatrixSimple(C);
+
+	cout << "\n";
+	pause();
+	cout << "\n\n";
+
+	/*
+		Четвертое задание
+		Используется отношение:
+		7) R = { (x,y) "Принадлежит" А^2 | x+y>3, x<y }.
+	*/
+	matrix D = multiplication(A, B);
+	cout << "Четвертое задание\n";
+	showMatrixSimple(D);
+
+	cout << "\n";
+	pause();
+	cout << "\n\n";
+
+	/*
+		Пятое задание
+		Используется отношение:
+		7) R = { (x,y) "Принадлежит" А^2 | x+y>3, x<y }.
+	*/
+	matrix E = D;
+	dual(E);
+	cout << "Пятое задание\n";
+	showMatrixSimple(E);
+
+	cout << "\n";
+	pause();
+	cout << "\n\n";
+
+	/*
+		Шестое задание
+		Используется отношение:
+		7) R = { (x,y) "Принадлежит" А^2 | x+y>3, x<y }.
+	*/
+	matrix F = intersection(A, D);
+	cout << "Шестое задание\n";
+	showMatrixSimple(F);
+
+	cout << "\n";
+	pause();
+	cout << "\n\n";
+
+	cout << "Седьмое задание\n";
+	cout << "Проверка свойств заданного отношения: \n";
+	showMatrixSimple(E);
+	cout << "\n";
+	// Проверка свойств
+	PropertyValidation(E);
+
+	cout << "\n";
+	pause();
+	cout << "\n\n";
+}
