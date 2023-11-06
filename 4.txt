@@ -1,0 +1,412 @@
+#include <iostream>
+#include <iomanip>
+#include <ctime>
+#include <vector>
+#include <windows.h>
+
+using namespace std;
+using row = vector<int>;
+using matrix = vector<row>;
+
+void pause()
+{
+	string line = "";
+	while (line != "n")
+	{
+		cout << "Введите n, чтобы продолжить => ";
+		cin >> line;
+	}
+}
+
+// Инициализация вершин и ребер
+void initVerticesAndRibs(int& vertices, int& ribs)
+{
+	cout << "Введите число n в диапазоне [3,6]: \n";
+	cin >> vertices;
+
+	while (vertices < 3 || vertices > 6)
+	{
+		cout << "\nВы ввели некорректное число, попробуйте снова => ";
+		cin >> vertices;
+	}
+
+	cout << "\nВведите число m в диапазоне [" << vertices - 1 << "," << 2 * vertices << "]: \n";
+	cin >> ribs;
+
+	while (ribs < vertices - 1 || ribs > vertices * 2)
+	{
+		cout << "\nВы ввели некорректное число, попробуйте снова => ";
+		cin >> ribs;
+	}
+}
+
+// Генерация матрицы смежности
+void genAdjacencyMatrix(matrix& matrix, int vertices, int ribs)
+{
+	// Следующий цикл нужен для того, чтобы в графе все вершины были соединены
+	// Если в матрице в каждой строке треугольника под главной диагональю присутствует хотя бы одна 1,
+	// То значит каждая вершина графа принадлежит хотя бы одному ребру
+
+	for (int i = 1; i < vertices; i++)
+	{
+		int l = (rand() % vertices) % i;
+		while (l == i) l = (rand() % vertices) % i;
+		matrix[i][l] = 1;
+	}
+
+	// Но могут остаться ещё рёбра, которые нужно рандомно добавить в матрицу, не включая главную диагональ
+	ribs -= vertices - 1;
+	int i, j;
+	while (ribs > 0)
+	{
+		i = rand() % vertices;
+		j = rand() % vertices;
+
+
+		if ((matrix[i][j] == 0) && (i != j))
+		{
+			matrix[i][j] = 1;
+			ribs--;
+		}
+	}
+
+}
+
+// Вывод матрицы
+void displayMatrix(matrix& matrix)
+{
+	// Вывод матрицы на экран, n - число строк, m - число столбцов
+	int n = matrix.size();
+	int m = matrix[0].size();
+
+	cout << setw(9) << 1;
+	for (int i = 2; i <= m; i++)
+		cout << setw(4) << i;
+	cout << endl;
+	cout << "        ";
+	for (int i = 1; i < m; i++)
+		cout << "----";
+	cout << "-\n\n";
+	for (int i = 0; i < n; i++)
+	{
+		cout << setw(3) << i + 1 << " |";
+		for (int j = 0; j < m; j++)
+		{
+			cout << setw(4) << matrix[i][j];
+		}
+		cout << endl << endl;
+	}
+}
+
+// Проверка матрицы пользователя на корректность
+bool CorrectMatrix(matrix matrix, int vertices, int ribs)
+{
+	// Считаем число рёбер
+	int count = 0;
+	for (int i = 0; i < vertices; i++)
+	{
+		for (int j = 0; j < vertices; j++)
+		{
+			// Проверка на наличиче петель
+			if (matrix[i][i] == 1) return false;
+			// Считаем все 1, кроме главной диагонали
+			if (i != j && matrix[i][j] == 1) count++;
+		}
+	}
+
+	// Если кол-во единиц не равно кол-ву ребер, то вернуть ложь
+	if (count != ribs) return false;
+
+	// Если все окей, то вернется истина
+	return true;
+}
+
+// Заполнение матрицы смежности
+void fillAdjMatrix(matrix& adjMatrix, int vertices, int ribs)
+{
+	int option = 0;
+
+	cout << "\n\nВыберете способ генерации матрицы: \n[1] - случайно \n[2] - с клавиатуры \n\n";
+	cout << "Введите номер пункта меню: \n";
+	cin >> option;
+
+	while (option < 1 || option > 2)
+	{
+		cout << "\nВведено некорректное значение, попробуйте снова \n";
+		cin >> option;
+	}
+
+	if (option == 1)
+	{
+		genAdjacencyMatrix(adjMatrix, vertices, ribs); // Генерация матрицы
+	}
+	else
+	{
+		cout << "\nВы выбрали ручной способ заполнения \n";
+		bool correct = false;
+		while (!correct) // Заполнение матрицы смежности вручную
+		{
+			for (int i = 0; i < vertices; i++)
+			{
+				cout << "\nЗаполните данные " << i + 1 << " строки: \n";
+				for (int j = 0; j < vertices; j++)
+				{
+					cout << "Введите число -> ";
+					int num;
+					cin >> num;
+					adjMatrix[i][j] = num;
+				}
+			}
+
+			// Проверка на корректность
+			if (!CorrectMatrix(adjMatrix, vertices, ribs)) cout << "\n\nМатрица была задана неккоректно. Повторите ввод. \n";
+			else correct = true;
+		}
+	}
+}
+
+// Генерация подграфа
+void CreateSubgraph(const matrix adjMatrix, matrix& MatrixK, int vertices, int k)
+{
+	for (int i = 0; i < k; i++)
+	{
+		for (int j = 0; j < k; j++)
+		{
+			MatrixK[i][j] = adjMatrix[vertices - k + i][vertices - k + j];
+		}
+	}
+
+	// Следующий цикл необходим для выделения подграфов с различным количеством рёбер
+	for (int i = 0; i < k; i++)
+	{
+		for (int j = 0; j < k; j++)
+		{
+			// Это для вероятности удаления ребра 50/50
+			if ((MatrixK[i][j] == 1) && ((rand() % vertices) % 2 == 1))
+			{
+				MatrixK[j][i] = 0;
+			}
+		}
+	}
+}
+
+// Hаходит значение суммы матриц смежности,возведённых в степени
+void makeMatrixSum(matrix adjMatrix, matrix& matrixSum, int n)
+{
+	// Создание матрицы для копирования значений предыдущего возведения в степень
+	matrix Copy(n, row(n, 0));
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			Copy[i][j] = adjMatrix[i][j];
+		}
+	}
+
+	// Счётчик l-считает количество возведений в степень
+	for (int l = 2; l <= n; l++)
+	{
+		// Создание матрицы для запоминания результатов возведения матрицы смежности в степень
+		// На каждом новом проходе цикла матрица будет обнуляться,чтобы не портить значения предыдущих расчётов
+		matrix Temp(n, row(n, 0));
+
+		// Возведение в степень
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				for (int q = 0; q < n; q++)
+				{
+					Temp[i][j] += (Copy[i][q] * adjMatrix[q][j]);
+				}
+			}
+		}
+
+		for (int i = 0; i < n; i++)//копирование значений из MatrixPr в Copy
+		{
+			for (int j = 0; j < n; j++)
+			{
+				Copy[i][j] = Temp[i][j];
+			}
+		}
+
+		cout << "\nМатрица смежности возведённая в " << l << " степень \n\n";
+		displayMatrix(Temp);
+
+		for (int i = 0; i < n; i++)//суммирование всех возведённых в степень матриц смежности
+		{
+			for (int j = 0; j < n; j++)
+			{
+				matrixSum[i][j] += Temp[i][j];
+			}
+		}
+	}
+}
+
+// Cоздаёт матрицу контрдостижимости по матрице смежности
+void MatUnReachability(matrix matrSum, matrix& MatUnReach, int n)
+{
+	// Создание матрицы достижимости
+	matrix Copy(n, row(n, 0));
+
+	for (int i = 0; i < n; i++)//суммирование всех возведённых в степень матриц смежности
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if (matrSum[i][j] != 0 || i == j) Copy[i][j] = 1;
+			else Copy[i][j] = 0; // Все эелементы,не равные нулю или находящиеся на диагонали были заменены на 1 для удобства проверки
+		}
+	}
+
+	// транспонирование матрицы достижимости
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			MatUnReach[j][i] = Copy[i][j];
+		}
+	}
+}
+
+// Проверка на сильную связь
+bool isStrong(matrix MatUnReach)
+{
+	int n = MatUnReach.size();
+	// Tранспонирование матрицы достижимости
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			// Eсли в матрице есть хотя бы один ноль, то сильная связь отсутсвует
+			if (MatUnReach[i][j] == 0) return false;
+		}
+	}
+	return true;
+}
+
+// Находит максимальное значение в матрице суммы матриц смежности
+int MaxWayInMatrix(matrix matrix)
+{
+	int n = matrix.size();
+	int max = -1;
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			// Ищет максимум не на диагонали
+			if ((matrix[i][j] > max) && (i != j))
+			{
+				max = matrix[i][j];
+			}
+		}
+	}
+
+	return max;
+}
+
+// Выводит на экран пару вершин,между которыми есть наибольшее количество вершин
+void PairVerInMatr(matrix matrixSum, int max, int& count)
+{
+	int n = matrixSum.size();
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if ((matrixSum[i][j] == max))
+			{
+				// Bывод на экран номеров вершин
+				cout << i + 1 << ", " << j + 1 << " - " << max << endl;
+				count++;
+			}
+		}
+	}
+}
+
+int main()
+{
+	system("color F0");
+	srand(unsigned(time(NULL)));
+	setlocale(0, "");
+
+	int vertices = 0, ribs = 0, choice = 0;
+
+	do
+	{
+		system("cls");
+		cout << "достижимость и связность в графах\n";
+
+		// Инициализация вершин и ребер
+		initVerticesAndRibs(vertices, ribs);
+
+		// Объявляем матрицу смежности и заполняем ее нулями
+		matrix adjMatrix;
+
+		// Если матрица не пуста, то очищаем ее
+		if (!adjMatrix.empty()) adjMatrix.clear();
+		// Вставляем в матрицу нулевые строки
+		for (int i = 0; i < vertices; i++) adjMatrix.push_back(row(vertices, 0));
+
+		// Заполняем матрицу
+		fillAdjMatrix(adjMatrix, vertices, ribs);
+
+		// Чистим консоль и выводим матрицу
+		cout << "\n\nМатрица смежности:\n\n";
+		displayMatrix(adjMatrix);
+		cout << "\n";
+		pause();
+
+		// Объявляем и инициализируем к
+		int k = 0;
+		cout << "\nВведите k вершин из интервала [1 <= k <= " << vertices - 1 << "] -> ";
+		cin >> k;
+		// Если к не входит по условиям, то просим ввести его снова
+		while (k < 1 || k > vertices - 1)
+		{
+			cout << "\nВы ввели неправильное число, повторите ввод -> ";
+			cin >> k;
+		}
+
+		// Объявляем матрицу смежности подграфа и заполняем ее нулями
+		matrix MatrixK(vertices, row(vertices, 0));
+
+		// Создание подграфа
+		CreateSubgraph(adjMatrix, MatrixK, vertices, k);
+
+		cout << "\n\nМатрица смежности:\n\n";
+		displayMatrix(MatrixK);
+		cout << "\n";
+		pause();
+
+		// Матрица суммы всех степеней матрицы смежности
+		matrix MatrixSum(vertices, row(vertices, 0));
+
+		// Находим матрицу смежности суммы и выводим последовательные возведения в степень
+		makeMatrixSum(adjMatrix, MatrixSum, vertices);
+		cout << "\n\nСумма матриц смежности, возводимых до степени " << vertices << "\n";
+		displayMatrix(MatrixSum);
+		cout << "\n";
+		pause();
+
+		// Матрица контрдостижимости
+		matrix MatUnReach(vertices, row(vertices, 0));
+		// Нахождение матрицы контрдостижимости
+		MatUnReachability(MatrixSum, MatUnReach, vertices);
+		if (isStrong(MatUnReach)) cout << "\n\nГраф сильно связанный \n";
+		else cout << "\n\nГраф не сильно связанный \n";
+		cout << "\n";
+		pause();
+
+		int count = 0;
+		// Xранит в себе значение максимального пути
+		int maxway = MaxWayInMatrix(MatrixSum);
+		cout << "\n\nПары вершин графа,между которыми есть наибольшее количество путей \n";
+		PairVerInMatr(MatrixSum, maxway, count);//вывод этих пар на экран
+		cout << "\n";
+		pause();
+
+	} while (choice == 1);
+
+	cout << "\n\n";
+	system("pause");
+	return 0;
+}
