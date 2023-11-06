@@ -1,0 +1,361 @@
+#include <iostream>
+#include <random>
+#include <ctime>
+#include <iterator>
+#include <stdlib.h>
+#include <cstdlib>
+
+using namespace std;
+
+int initSizeN(); // Инициализирует переменную N
+int initSizeM(); // Инициализирует переменную M
+int initSizeK(int); // Иниуиализирует переменную K
+bool checkCondition(int, int); // Проверяет больше ли второе (переменная m) число первого (переменная n) числа
+void pushBack(int*&, int&, int); // Добавляет элемент в конец массива
+void popBack(int*&, int&); // Удаляет последний элемент массива
+bool exist(const int*, const int&, int); // Проверяет, существует ли элемент в массиве
+void bubbleSort(int*, int); // Сортировка массива по возрастанию
+int* initArray(int, int); // Инициализация массива
+void showArray(const int*, int); // Показать массив
+void showSet(const int*, int); // Показать множество
+int* intersection(const int*, int, const int*, int, int&); // Вернуть множество после пересечения двух множеств
+int* unification(const int*, int, const int*, int, int&); // Вернуть множество после объединения двух множеств
+int* difference(const int*, int, const int*, int, int&); // Вернуть множество после разности двух множеств
+bool subset(const int*, int, const int*, int); // Является ли подмножеством множества
+void task1(const int*, int, const int*, int); // Задание 1
+void task2(const int*, int, const int*, int); // Задание 2
+void task3(const int*, int, const int*, int); // Задание 3
+void task4(const int*, int, const int*, int); // Задание 4
+void task5(const int*, int, int, int); // Задание 5
+bool menu(int&, int&, int&); // Вывод меню
+
+int main()
+{
+    system("color F0");
+    setlocale(LC_ALL, "Russian");
+    srand((unsigned)time(NULL));
+
+    int n;
+    int m;
+    do
+    {
+        n = initSizeN();
+        cout << endl;
+        m = initSizeM();
+    } while (!checkCondition(n, m));
+    int sizeA = n, sizeB = m;
+    cout << endl;
+    int k = initSizeK(n);
+    do
+    {
+        system("cls");
+        cout << "множества \n";
+
+        sizeA = n;
+        sizeB = m;
+        int* a = initArray(n, n); // Первый аргумент - размер; Второй аргумент - дополнительная переменная;
+        int* b = initArray(m, n);
+        
+        cout << "Сгенерированные множества А и В \n";
+        cout << "Множество A = ";
+        bubbleSort(a, sizeA);
+        showSet(a, sizeA);
+
+        cout << "Множество B = ";
+        bubbleSort(b, sizeB);
+        showSet(b, sizeB);
+        cout << "\n\n";
+        
+        cout << "Первое задание: \n";
+        task1(a, sizeA, b, sizeB);
+
+        cout << "\n\nВторое задание: \n";
+        task2(a, sizeA, b, sizeB);
+
+        cout << "\n\nТретье задание: \n";
+        task3(a, sizeA, b, sizeB);
+
+        cout << "\n\nЧетвертое задание: \n";
+        task4(b, sizeB, a, sizeA);
+
+        cout << "\n\nПятое задание: \n";
+        task5(a, sizeA, n, k);
+    } while (menu(m, n, k));
+    cout << endl;
+    system("pause");
+    return 0;
+}
+
+bool menu(int& n, int& m, int& k)
+{
+    do
+    {
+        cout << "\n\n";
+        cout << "Выберите следующее выполнение программы: \n"
+            << "[1] - Инициализировать переменную N \n"
+            << "[2] - Инициализировать переменную M \n"
+            << "[3] - Инициализировать переменную K \n"
+            << "[4] - Выполнить задание повторно \n"
+            << "[5] - Завершить работу программы \n\n";
+        int choice;
+        do
+        {
+            cout << "Введите номер пункта меню => ";
+            cin >> choice;
+            if (choice < 1 || choice > 5)
+                cout << "Ошибка! Повторите ввод! \n";
+        } while (choice < 1 || choice > 5);
+        switch (choice)
+        {
+        case 1:
+            do
+            {
+                cout << endl;
+                n = initSizeN();
+            } while (!checkCondition(n, m));
+            break;
+        case 2:
+            do
+            {
+                cout << endl;
+                m = initSizeM();
+            } while (!checkCondition(n, m));
+            break;
+        case 3:
+            cout << endl;
+            k = initSizeK(n);
+            break;
+        case 4:
+            return true;
+        default:
+            return false;
+        }
+    } while (true);
+}
+
+void task1(const int* a, int sizeA, const int* b, int sizeB)
+{
+    if (subset(b, sizeB, a, sizeA))
+        cout << "Множество B является подмножеством A! \n";
+    else
+        cout << "Множество B не является подмножеством A! \n";
+}
+
+void task2(const int* a, int sizeA, const int* b, int sizeB)
+{
+    int sizeC;
+    int* c = intersection(a, sizeA, b, sizeB, sizeC);
+
+    cout << "Пересечение множеств A и B = ";
+    bubbleSort(c, sizeC);
+    showSet(c, sizeC);
+}
+
+void task3(const int* a, int sizeA, const int* b, int sizeB)
+{
+    int sizeD;
+    int* d = unification(a, sizeA, b, sizeB, sizeD);
+    
+    cout << "Объединение множеств A и B = ";
+    bubbleSort(d, sizeD);
+    showSet(d, sizeD);
+}
+
+void task4(const int* a, int sizeA, const int* b, int sizeB)
+{
+    int sizeE;
+    int* e = difference(a, sizeA, b, sizeB, sizeE);
+    
+    cout << "Разность множеств B и A = ";
+    bubbleSort(e, sizeE);
+    showSet(e, sizeE);
+}
+
+void task5(const int* a, int sizeA, int n, int k)
+{
+    k -= 1;
+    
+    cout << "Разбиение множества А на K подмножеств = ";
+    int i = 0;
+
+    cout << "{";
+    while (i < k)
+        cout << '{' << a[i++] << "}, ";
+    cout << '{' << a[i++];
+    while (i < sizeA)
+        cout << ", " << a[i++];
+    cout << "}}; \n";
+}
+
+int* intersection(const int* arrayA, int sizeA, const int* arrayB, int sizeB, int& sizeNew)
+{
+    sizeNew = 0;
+    int* arrayNew = new int[sizeNew];
+    for (int i = 0; i < sizeB; i++)
+        if (exist(arrayA, sizeA, arrayB[i]))
+            pushBack(arrayNew, sizeNew, arrayB[i]);
+    return arrayNew;
+}
+
+int* unification(const int* arrayA, int sizeA, const int* arrayB, int sizeB, int& sizeNew)
+{
+    sizeNew = 0;
+    int* arrayNew = new int[sizeNew];
+    for (int i = 0; i < sizeA; i++)
+        if (!exist(arrayNew, sizeNew, arrayA[i])) pushBack(arrayNew, sizeNew, arrayA[i]);
+    for (int i = 0; i < sizeB; i++)
+        if (!exist(arrayNew, sizeNew, arrayB[i])) pushBack(arrayNew, sizeNew, arrayB[i]);
+    return arrayNew;
+}
+
+int* difference(const int* arrayA, int sizeA, const int* arrayB, int sizeB, int& sizeNew)
+{
+    sizeNew = 0;
+    int* arrayNew = new int[sizeNew];
+    for (int i = 0; i < sizeA; i++)
+        if (!exist(arrayB, sizeB, arrayA[i]))
+            pushBack(arrayNew, sizeNew, arrayA[i]);
+    return arrayNew;
+}
+
+bool subset(const int* arrayA, int sizeA, const int* arrayB, int sizeB)
+{
+    for (int i = 0; i < sizeA; i++)
+        if (!exist(arrayB, sizeB, arrayA[i]))
+            return false;
+    return true;
+}
+
+void showArray(const int* array, int size)
+{
+    for (int i = 0; i < size; i++)
+        cout << '[' << i << "] >> " << array[i] << endl;
+}
+
+void showSet(const int* set, int size)
+{
+    if (!size) cout << "{};";
+    else if (size == 1) cout << "{" << set[0] << "};";
+    else
+    {
+        for (int i = 0; i < size; i++)
+        {
+            if (!i) cout << "{" << set[i];
+            else if (i == size - 1) cout << ", " << set[i] << "}; \n";
+            else cout << ", " << set[i];
+        }
+    }
+}
+
+int* initArray(int size, int n) // Инициализация массива
+{
+    n += 6;
+    int number;
+    int* array = new int[0];
+    for (int realSize = 0; realSize < size;)
+    {
+        do
+        {
+            number = rand() % n;
+        } while (exist(array, realSize, number));
+        pushBack(array, realSize, number);
+    }
+    return array;
+}
+
+void popBack(int*& array, int& size)
+{
+    int* arrayNew = new int[--size];
+    for (int i = 0; i < size; i++)
+        arrayNew[i] = array[i];
+    delete[] array;
+    array = arrayNew;
+}
+
+void pushBack(int*& array, int& size, int num)
+{
+    int* arrayNew = new int[size + 1];
+    for (int i = 0; i < size; i++)
+        arrayNew[i] = array[i];
+    arrayNew[size++] = num;
+    delete[] array;
+    array = arrayNew;
+}
+
+bool exist(const int* array, const int& size, int num)
+{
+    for (int i = 0; i < size; i++)
+        if (array[i] == num) return true;
+    return false;
+}
+
+void bubbleSort(int* array, int size)
+{
+    int temp;
+    for (int i = 0; i < size; i++)
+        for (int j = 0; j < size - 1; j++)
+            if (array[j] > array[j + 1])
+            {
+                temp = array[j];
+                array[j] = array[j + 1];
+                array[j + 1] = temp;
+            }
+}
+
+bool checkCondition(int n, int m)
+{
+    if (m > n)
+    {
+        cout << "Ошибка! Значение переменной N должно быть больше значения M или быть равным ему!" << endl;
+        return false;
+    }
+    return true;
+}
+
+int initSizeN()
+{
+    cout << "Введите размер первого множества N из интервала [6, 10]. \n\n";
+        // << "Значение переменной M должно быть меньше или равно значению переменной N." << endl
+        // << endl;
+    int n;
+    do
+    {
+        cout << "Введите натуральное значение N => ";
+        cin >> n;
+        if (n < 6 || n>10)
+            cout << "Ошибка! Указанное значение не входит в заданный диапазон!" << endl;
+    } while (n < 6 || n>10);
+    return n;
+}
+
+int initSizeM()
+{
+    cout << "Введите размер второго множества M из интервала [4, 8]. \n";
+    cout << "Значение переменной M должно быть меньше или равно значению переменной N. \n\n";
+
+    int m;
+    do
+    {
+        cout << "Введите натуральное значение M => ";
+        cin >> m;
+        if (m < 4 || m>8)
+            cout << "Ошибка! Указанное значение не входит в заданный диапазон!" << endl;
+    } while (m < 4 || m>8);
+    return m;
+}
+
+int initSizeK(int n)
+{
+    cout << "Введите размер третьего множества K из интервала [2, " << n - 2 << "] \n";
+    cout << "Значение переменной K должно быть меньше или равно значению переменной N. \n\n";
+
+    int k;
+    do
+    {
+        cout << "Введите натуральное значение K => ";
+        cin >> k;
+        if (k<2 || k>n - 2)
+            cout << "Ошибка! Указанное значение не входит в заданный диапазон!" << endl;
+    } while (k<2 || k>n - 2);
+    return k;
+}
