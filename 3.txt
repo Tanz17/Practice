@@ -1,0 +1,826 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <string>
+#include <vector>
+#include <iomanip>
+#include <windows.h>
+#include <random>
+#include <fstream>
+#include <functional>
+#include <sstream>
+#include <conio.h>
+#include <iterator>
+
+using namespace std;
+
+const signed int short g_min{ -10 }, g_max{ 10 };
+const char* sInitAB = "Укажите границы диапазона случаных значений множеств А и B.";
+const char* sInitXY = "Укажите границы диапазона случаных значений множеств X и Y.";
+const char* sInputSizeAB = "Укажите максимальный размер множеств A и B.";
+const char* sInputSizeXY = "Укажите максимальный размер множеств X и Y.";
+const char* sRangeAB = "Текущие границы диапазона случаных значений множеств А и B";
+const char* sRangeXY = "Текущие границы диапазона случаных значений множеств X и Y";
+
+// Генерация случайного числа в диапазоне от минимального до максимального числа
+inline int rand(int min, int max) {
+	/*
+	static std::random_device rd;
+	static std::mt19937_64 gen(rd());
+	std::uniform_int_distribution<> dist(min, max);
+	return dist(gen);
+	*/
+	return rand() % (max - min + 1) + min;
+}
+// Класс - Моё множество
+class MySet {
+private:
+	vector<int> set;
+public:
+	/* Конструктор по умолчанию */
+	MySet() {}
+	/* Деструктор по умолчанию */
+	~MySet() {}
+	/* Удаляет элемент */
+	bool del(int number) {
+		bool find = false;
+		for (int i = 0, size = (int)set.size(); i < size && !find; i++)
+			if (set[i] == number) {
+				auto it = set.begin() + i;
+				set.erase(it);
+				find = true;
+			}
+		return find;
+	}
+	/* Проверяет число на дубликат */
+	bool isDuplicate(int number) {
+		bool firstNumber = false;
+		for (int i = 0, size = (int)set.size(); i < size; i++)
+			if (set[i] == number)
+				if (firstNumber) return true;
+				else firstNumber = true;
+		return false;
+	}
+	/* Проверяет всё множество на дубликаты */
+	bool isDuplicate() {
+		for (int i = 0, size = (int)set.size(); i < size; i++)
+			if (isDuplicate(set[i])) return true;
+		return false;
+	}
+	/* Возвращается размер множества */
+	int size() {
+		return (int)set.size();
+	}
+	/* Проверяет наличие числа во множестве */
+	bool contains(int number) {
+		for (int el : set) if (el == number) return true; /* Число существует во множестве */
+		return false; /* Числа не существует во множестве */
+	}
+	/* Обмен значений двух множеств */
+	void swap(MySet a) {
+		int size = (int)set.size();
+		for (int i = 0; i < size; i++) set[i] = a[i];
+	}
+	/* Вернуть копию числа под индеком */
+	int operator[](int index) {
+		return set[index];
+	}
+	/* Добавить элемент в множество (c проверкой на совпадение)*/
+	void insert(const int& number, bool numberRepet = false) {
+		if (numberRepet || !contains(number)) set.push_back(number);
+		sort();
+	}
+	/* Дополняет монжество элементами другого множества */
+	void add(const MySet& col, bool numberRepet = false) {
+		for (int number : col.set) insert(number, numberRepet);
+		sort();
+	}
+	/* Очистка множетсва от чисел */
+	void clear() {
+		set.clear();
+	}
+	/* Вывети элементы множества на экран в виде строки */
+	string showToString() {
+		string str = "{ ";
+		int currentSize = size();
+		for (int i = 0, end = currentSize - 1; i < currentSize; i++) {
+			str += to_string(set[i]);
+			if (i < end) str += ", ";
+		}
+		str += " }";
+		return str;
+	}
+	/* Пузырьковая сортировка */
+	void sort() {
+		int temp;
+		for (int i = size() - 1; i >= 1; i--)
+			for (int j = 0; j < i; j++)
+				if (set[j] > set[j + 1]) {
+					temp = set[j];
+					set[j] = set[j + 1];
+					set[j + 1] = temp;
+				}
+	}
+	/* Заполнить случайными числами в диапазоне */
+	void fill(int newSize, int left, int right, bool numberRepet = false) {
+		clear();
+		while (size() < newSize) insert(rand(left, right), numberRepet);
+	}
+};
+// Очистка консоли (true) и вывод заголовка
+void headline(bool flag) {
+	if (flag) system("cls");
+}
+// Дескриптор, хранящий в себе одну пару целочисленных значений
+struct Pair {
+	/*Дополнительный конструктор*/
+	Pair(int a = 0, int b = 0, int ia = 0, int ib = 0) {
+		this->a = a;
+		this->b = b;
+		this->ia = ia;
+		this->ib = ib;
+	}
+	int a;
+	int b;
+	int ia;
+	int ib;
+};
+// Сравнить на равенство две пары чисел
+bool equal(const Pair& first, const Pair& second) {
+	return (first.a == second.a) && (first.b == second.b);
+}
+// Сравнить, "больше" ли first дискриптор пары чисел
+bool larger(const Pair& first, const Pair& second) {
+	if (first.a > second.a) return true;
+	else if (first.a == second.a && first.b > second.b) return true;
+	else return false;
+}
+// Пузырьковая сортировка
+void sort(vector<Pair>& v) {
+	Pair temp;
+	for (int i = (int)v.size() - 1; i >= 1; i--)
+		for (int j = 0; j < i; j++)
+			if (larger(v[j], v[j + 1])) {
+				temp = v[j];
+				v[j] = v[j + 1];
+				v[j + 1] = temp;
+			}
+}
+// Проверяет наличие пары чисел во множестве
+bool contains(const vector<Pair>& c, const Pair& p) {
+	for (const Pair& temp : c)
+		if (equal(temp, p))
+			return true;
+	return false;
+}
+// Декартово произведение двух множеств
+void multiplySet(vector<Pair>& v, MySet a, MySet b, bool numberRepet = false) {
+	int sizeA = a.size();
+	Pair newEl;
+	for (int i = 0; i < a.size(); i++)
+		for (int j = 0; j < b.size(); j++) {
+			newEl = { a[i], b[j], i, j };
+			if (numberRepet || !contains(v, newEl))
+				v.push_back(newEl);
+		}
+	//sort(v);
+}
+// Декартово произведение двух множеств в случайном порядке
+void randMultiplySet(vector<Pair>& v, MySet a, MySet b, int currentSize) {
+	Pair newEl;
+	MySet extraSet;
+	int iEnd = currentSize - 1;
+	for (int i = 0, randIndex, temp; i < currentSize;) {
+		randIndex = rand(0, iEnd);
+		temp = b[randIndex];
+		if (!extraSet.contains(randIndex)) {
+			extraSet.insert(randIndex);
+			v.push_back({ a[i], temp, i, randIndex });
+			i++;
+		}
+	}
+	//sort(v);
+}
+//Предполагается, что числа в pair не будут иметь больше 3-ёх символов ( один на знак минус ).
+string getStrPair(const Pair& pair) {
+	stringstream result;
+	result << "[" << setw(2) << pair.ia << "]" << "[" << setw(2) << pair.ib << "] " <<
+		"( " << setw(3) << pair.a << ',' << setw(3) << pair.b << " )";
+	return result.str();
+}
+// Отобразить множество точек c отступом отображения в сторону
+string getStrSet(const vector<Pair>& v, const char* str = nullptr) {
+	stringstream result;
+	if (str) result << str << ":\n";
+	result << "{\n";
+	for (int i = 0, size = (int)v.size(), end = size - 1; i < size; i++) {
+		if ((i + 2) % 2 == 0) result << "\t";
+		result << getStrPair(v[i]);
+		if (i < end) {
+			result << ",\t";
+			if ((i + 1) % 2 == 0) result << "\n";
+		}
+		else result << "\n" << "}\n";
+	}
+	return result.str();
+}
+// Ввод целого числа
+int getIntNum(bool strInput = false) {
+	int num{};
+	if (strInput) cout << "\nВведите число -> ";
+	while (!(cin >> num)) {
+		cin.clear();
+		cout << "\nОшибка! Введите число!\n"
+			"Введите число -> ";
+		while (cin.get() != '\n')
+			continue;
+	}
+	while (cin.get() != '\n')
+		continue;
+	return num;
+}
+
+/*~~~~*/
+// Сообщение об ошибке ввода
+int inputWithCondition(function<bool(int)> key, const string& str) {
+	bool isRun;
+	int  result;
+	cout << str << endl;
+	do {
+		result = getIntNum(true);
+		isRun = key(result);
+		if (isRun) {
+			headline(true);
+			cout << "Ошибка! Повторите ввод!" << endl;
+			if (isRun) cout << str << endl;
+		}
+	} while (isRun);
+	return result;
+}
+// Ввод значения из диапазона
+int inputInRange(const int* left = nullptr, const int* right = nullptr, const char* str = nullptr) {
+	int result;
+	if (str) cout << str << endl;
+	if (!left)
+		result = inputWithCondition([right](int number) {
+		return number > * right;
+			},
+			"Допустимый диапазон ввода начинается с числа " + to_string(*right));
+	else if (!right)
+		result = inputWithCondition([left](int number) {
+		return number < *left;
+			},
+			"Допустимый диапазон ввода заканчивается числом" + to_string(*left));
+	else
+		result = inputWithCondition([left, right](int number) {
+		return number < *left || number > * right;
+			},
+			"Допустимый диапазон ввода: [ " + to_string(*left) + ", " + to_string(*right) + " ]");
+	return result;
+}
+// Изменить все границы
+void allRange(int min, int max, int& left, int& right) {
+	left = inputInRange(&min, &max, "Укажите минимальное допустимое число.");
+	headline(true);
+	right = inputInRange(&min, &max, "Укажите максимальное допустимое число.");
+	headline(true);
+}
+// Изменить левую границу
+void leftRange(int min, int max, int& left, int& right) {
+	left = inputInRange(&min, &max, "Укажите минимальное допустимое число.");
+	headline(true);
+}
+// Изменить правую границу
+void rightRange(int min, int max, int& left, int& right) {
+	right = inputInRange(&min, &max, "Укажите максимальное допустимое число.");
+	headline(true);
+}
+// Ввод границ диапазона
+void getRange(int& currentMin, int& currentMax, int currentSizeSet,
+	void (*range)(int min, int max, int& left, int& right),
+	const char* str = nullptr) {
+	bool isRun = true;
+	if (str) cout << str << endl << endl;
+	do {
+		range(g_min, g_max, currentMin, currentMax);
+		if (currentMin > currentMax) {
+			headline(true);
+			cout << "Левая граница не может быть больше правой границы!" << endl;
+		}
+		//else if (abs(currentmax - currentmin) + 1 < currentsizeset) {
+		//	headline(true);
+		//	cout << "указан слишком маленький диапазон для полной инициализации моножеств!" << endl;
+		//}
+		else isRun = false;
+		if (isRun && str) cout << str << endl << endl;
+	} while (isRun);
+}
+
+// Вывод границ диапазона
+void showRange(int left, int right, const char* str) {
+	cout << str << ":\n"
+		"[ " << left << ", " << right << " ] \n\n";
+}
+// Вывод зеленой строки
+void showGreenStr(const string& str) {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	/*Цвет символов - светло-зеленый. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 10));
+	cout << str;
+	/*Возвращаем Цвет символов - белый. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 0));
+}
+// Вывод красной строки
+void showRedStr(const string& str) {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	/*Цвет символов - светло-красный. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 12));
+	cout << str;
+	/*Возвращаем Цвет символов - белый. Цвет фона - черный*/
+	SetConsoleTextAttribute(hConsole, (WORD)((15 << 4) | 0));
+}
+// Вывод строки с определённыvb атрибутами заданного символа
+void showChar(const char& in, const char& out, const WORD& newAttribute) {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+	GetConsoleScreenBufferInfo(hConsole, &csbiInfo);
+	WORD saveOldAttribute = csbiInfo.wAttributes;
+	WORD currentAttribute = saveOldAttribute;
+	if (in == out) {
+		if (currentAttribute != newAttribute)
+			SetConsoleTextAttribute(hConsole, currentAttribute = newAttribute);
+		cout.put(in);
+	}
+	else {
+		if (currentAttribute != saveOldAttribute)
+			SetConsoleTextAttribute(hConsole, currentAttribute = saveOldAttribute);
+		cout.put(in);
+	}
+	SetConsoleTextAttribute(hConsole, saveOldAttribute);
+}
+// Вывод главного меню
+void menu(int& left, int& right) {
+	left = 1;
+	right = 5;
+	cout << "[1] - Перегенерировать множество A \n";
+	cout << "[2] - Перегенерировать множество B \n";
+	cout << "[3] - Перегенерировать оба множества \n";
+	cout << "[4] - Начать выполнение заданий \n";
+	cout << "[5] - Завершенить работы \n\n";
+}
+// Вернуть значение, выбранное пользователем из меню
+int getChoiceMenu(void (*showCurrentMenu)(int&, int&)) {
+	int left, right;
+	menu(left, right);
+	return inputInRange(&left, &right, "Требуется указать один из пунктов в меню.");;
+}
+// Показать информацию о множествах
+void show(MySet& A, const char& first, MySet& B, const char& second, const int& size) {
+	cout << "Текущий размер множеств " << first << " и " << second << ": " << size << endl << endl;
+	cout << "Множество " << first << " имеет вид:\n" << A.showToString() << endl << endl;
+	cout << "Множество " << second << " имеет вид:\n" << B.showToString() << endl << endl;
+}
+
+// Количество символов в представлении целочисленного числа
+int length(int num) {
+	if (!num) return 1;
+	int result = (num < 0 ? 1 : 0);
+	while (num) {
+		num /= 10;
+		result++;
+	}
+	return result;
+}
+// Отображение вертикальной линии и числа, центр отрезка задаётся координатам
+void lineVer(HDC hdc, int x, int y, int num, const int& halfSize = 7) {
+	char* str = new char[length(num) + 1];
+	sprintf(str, "%i", num);
+	TextOutA(hdc, x + 3, y + 1, str, (int)strlen(str));
+	MoveToEx(hdc, x, y - halfSize, NULL);
+	LineTo(hdc, x, y + halfSize);
+	MoveToEx(hdc, x, y, NULL);
+	delete[] str;
+}
+// Отображение горизонатльной линии и числа, центр отрезка задаётся координатами
+void lineHor(HDC hdc, int x, int y, int num) {
+	int halfSize = 7;
+	int size = length(num) + 1;
+	char* str = new char[size];
+	sprintf(str, "%i", num);
+	TextOutA(hdc, x + 3, y + 3, str, (int)strlen(str));
+	MoveToEx(hdc, x - halfSize, y, NULL);
+	LineTo(hdc, x + halfSize, y);
+	MoveToEx(hdc, x, y, NULL);
+	delete[] str;
+}
+// Дискриптор координатной прямой, содержащий по 10 отрезков в положителной и отрицательной половинах
+struct CoordLine {
+	COORD p[10];
+	COORD n[10];
+};
+// Дискриптор координат двух точек
+struct TwoCoord {
+	COORD upLeft;
+	COORD downRight;
+};
+// Отображение точки - окружности с заданным размером и координатами на декартовой системе
+// Контур и заливка задаётся до вызова данной функции
+void point(HDC hdc, int x, int y, int size, CoordLine hor, CoordLine ver) {
+	// Цвет и заливка задаётся до вызова функции
+	int pixelX, pixelY;
+	// Находится номер пикселя по каждой оси в консольном окне, 
+	// который будет удовлетворять координате в декартовой системе
+	if (x == 0)		pixelX = ver.p[0].X;
+	else if (x < 0) pixelX = hor.n[abs(x) - 1].X;
+	else			pixelX = hor.p[x - 1].X;
+
+	if (y == 0)		pixelY = hor.p[0].Y;
+	else if (y < 0) pixelY = ver.n[abs(y) - 1].Y;
+	else			pixelY = ver.p[y - 1].Y;
+	// Отрисовка окружности
+	Ellipse(hdc, pixelX - size, pixelY - size, pixelX + size, pixelY + size);
+}
+// Задание максимального размера окна консоли без возможности прокрутки
+void setMaxConsoleSize(const short int& bufferStockWidth = 0, const short int& bufferStockLength = 0) {
+	HANDLE hNdl = GetStdHandle(STD_OUTPUT_HANDLE); // Отдельно находится в данной функции дискриптор окна
+	// Задаем минимальные значения
+	SMALL_RECT zeroWindow = { 0, 0, 0, 0 };
+	COORD zBuffer = { 1, 1 };
+	SetConsoleWindowInfo(hNdl, TRUE, &zeroWindow);
+	SetConsoleScreenBufferSize(hNdl, zBuffer);
+
+	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+	GetConsoleScreenBufferInfo(hNdl, &csbiInfo);
+	// Изменяем значения на нужные нам
+	COORD largetConsoleWindowSize = GetLargestConsoleWindowSize(hNdl);
+	SetConsoleScreenBufferSize(hNdl,
+		{
+			largetConsoleWindowSize.X-- + bufferStockWidth,
+			largetConsoleWindowSize.Y-- + bufferStockLength
+		});
+
+	MoveWindow(GetConsoleWindow(), 0, 0, 0, 0, false);
+
+	SetConsoleWindowInfo(hNdl, TRUE, new SMALL_RECT
+		{
+			0,
+			0,
+			largetConsoleWindowSize.X,
+			largetConsoleWindowSize.Y
+		});
+}
+// Отобразить линию по координатам концов отрезков. Отображение линии задаётся до вызова функции
+void line(HDC hdc, const int xA, const int yA, const int xB, const int yB) {
+	MoveToEx(hdc, xA, yA, NULL);
+	LineTo(hdc, xB, yB);
+}
+// В данной функции размещается всё, что связано с отображением графики в окне консоли
+void coordinatePlane(HWND hwnd, HDC hdc, const vector<Pair>& v,
+	const short& shiftRight = 15, const short& shiftDown = 35,
+	const short& size = 710, const short& div = 10,
+	const short& sizeFrame = 3, const short& sizePoint = 5) {
+	// sizeFrame		- Размер багета в пикселях
+	// sizePoint		- Размер точки
+	// size				- Длина системы координат
+	// shiftRight		- Смещение системы координат вправо
+	// shiftDown		- Ширина системы координат влево
+	const COLORREF	red = RGB(255, 0, 0),		// Красный цвет
+		green = RGB(0, 255, 0),		// Зелёный цвет
+		blue = RGB(0, 0, 255),		// Синий цвет
+		white = RGB(255, 255, 255); // Белый цвет
+
+	const TwoCoord frame
+	{
+		{ 0 + shiftRight, 0 + shiftDown },
+		{ size + shiftRight, size + shiftDown }
+	};
+	SelectObject(hdc, CreatePen(PS_SOLID, sizeFrame, red)); // Устанавливает красный контур, толщина - 3, сплошной 
+	SelectObject(hdc, CreateSolidBrush(white)); // Устанавливаем белую кисть
+	Rectangle(hdc, frame.upLeft.X, frame.upLeft.Y, frame.downRight.X, frame.downRight.Y); // Рисуем рамку
+
+	/* Так как рамка имеет красный багет, нужно применить правки, чтобы не заходить в него */
+	const TwoCoord field
+	{
+		{frame.upLeft.X + sizeFrame, frame.upLeft.Y + sizeFrame},
+		{frame.downRight.X - sizeFrame, frame.downRight.Y - sizeFrame}
+	};
+
+	// Координаты горизонтальной и вертикальной линии системы координат
+	const COORD halfField
+	{
+		(field.downRight.X + field.upLeft.X) / 2,
+		(field.downRight.Y + field.upLeft.Y) / 2
+	};
+
+	// Отображение координатных прямых
+	SelectObject(hdc, CreatePen(PS_DOT, 0, green)); // Устанавливает зелёный контур, толщина - 0, пунктир
+	line(hdc, field.upLeft.X, halfField.Y, field.downRight.X, halfField.Y);
+	line(hdc, halfField.X, field.upLeft.Y, halfField.X, field.downRight.Y);
+
+	// Отображение отрезков координатных прямых
+	SelectObject(hdc, CreatePen(PS_SOLID, 2, green)); // Устанавливает зелёный контур, толщина - 2, сплошной 
+	const double interval = (field.downRight.X - halfField.X) / (div + 0.5); // Интервал двух ближайших отрезков
+	// Запоминание координат пикселей каждого отрезка из координатной прямой
+	CoordLine hor, ver;
+	// Отображение отрезков прямых системы координат
+	for (int i = 0, counter = 1, length; i < div; i++, counter++) {
+		length = (int)interval * counter;
+		// Горизонтальной прямой
+		hor.n[i].Y = hor.p[i].Y = halfField.Y;
+		hor.p[i].X = halfField.X + length;
+		hor.n[i].X = halfField.X - length;
+
+		lineVer(hdc, hor.p[i].X, halfField.Y, counter);
+		lineVer(hdc, hor.n[i].X, halfField.Y, -counter);
+		// Вертикальной прямой
+		ver.n[i].X = ver.p[i].X = halfField.X;
+		ver.p[i].Y = halfField.Y - length;
+		ver.n[i].Y = halfField.Y + length;
+		lineHor(hdc, halfField.X, ver.n[i].Y, -counter);
+		lineHor(hdc, halfField.X, ver.p[i].Y, counter);
+	}
+	// Отображение центрального деления
+	TextOutA(hdc, halfField.X + 3, halfField.Y + 3, "0", 2);
+
+	// Отображение точек на координатной прямой
+	SelectObject(hdc, CreatePen(PS_SOLID, 0, red)); // Устанавливает красный контур, толщина - 0, сплошной
+	SelectObject(hdc, CreateSolidBrush(red)); // Устанавливаем красную кисть 
+	// Отрисовка точек 
+	const unsigned int sizeVector = (unsigned int)v.size();
+	for (unsigned int i = 0; i < sizeVector; i++) point(hdc, v[i].a, v[i].b, sizePoint, hor, ver);
+}
+// Получить координаты курсора
+COORD getCoord(const int* x = nullptr, const int* y = nullptr) {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+	GetConsoleScreenBufferInfo(hConsole, &csbiInfo);
+	COORD cursor
+	{
+		(SHORT)(!x ? csbiInfo.dwCursorPosition.X : *x),
+		(SHORT)(!y ? csbiInfo.dwCursorPosition.Y : *y)
+	};
+	return cursor;
+}
+
+// Отобразить строку со смещением
+void show(const string& str, const int* x = nullptr, const int* y = nullptr, const WORD* attribute = nullptr) {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	COORD cursor = getCoord(x, y);
+	SetConsoleCursorPosition(hConsole, cursor);
+	char temp;
+	for (int i = 0, size = (int)str.size(); i < size; i++) {
+		temp = str[i];
+		if (temp == '\n') {
+			cursor.Y++;
+			SetConsoleCursorPosition(hConsole, cursor);
+		}
+		else if (attribute) showChar(temp, temp, *attribute);
+		else cout.put(temp);
+	}
+	cout << endl;
+}
+// Очистить часть экрана
+void clear(const short& width = 1, const short& length = 1, bool regardingBuffer = true,
+	const short& shiftRight = 0, const short& shiftDown = 0) {
+	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(hConsole, &csbiInfo);
+
+	short extraLength = (regardingBuffer ? 0 : csbiInfo.srWindow.Top);
+	short size = length + extraLength;
+	DWORD cWrittenChars;
+
+	for (short i = extraLength + shiftDown; i < size; i++) {
+		FillConsoleOutputCharacter(hConsole, (TCHAR)' ', width,
+			{
+				shiftRight,
+				i
+			}, &cWrittenChars);
+
+		FillConsoleOutputAttribute(hConsole, csbiInfo.wAttributes, width,
+			{
+				shiftRight,
+				i
+			}, &cWrittenChars);
+	}
+}
+// Вывести строку с определённым отступом и длиной
+string getLine(int coefficient, const char c = '-',
+	const int& interval = 1, const int& beginSpace = 0) {
+	stringstream result;
+	if (beginSpace) result << setw(beginSpace) << ' ';
+	result << setfill(c) << setw(interval * coefficient) << c;
+	return result.str();
+}
+// Сожержитсся ли элемент, содержащий в себе нужные индексы
+bool contains(const vector<Pair>& v, int ia, int ib) {
+	int size = (int)v.size();
+	for (const Pair& p : v)
+		if (p.ia == ia && p.ib == ib) return true;
+	return false;
+}
+// Вывести линию с определённым интервалом между числами множества
+void showMatrix(const vector<Pair>& v, const char& firstName, const char& secondName,
+	const int* x = nullptr, const int* y = nullptr, int interval = 4) {
+	/*
+		*\A+***y***y***y***y***y	0
+		*B\+---------------------	1
+		**x|+**1,**0,**1,**0,**1*|	2
+		**x|+**1,**0,**1,**0,**1*|	3
+		**x|+**1,**0,**1,**0,**1*|	4
+		**x|+**1,**0,**1,**0,**1*|	5
+		**x|+**1,**0,**1,**0,**1*|	6
+		**x|+**1,**0,**1,**0,**1*|	7
+		????---------------------	8
+	*/
+
+	HANDLE stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	COORD cursor = getCoord(x, y);
+	int size = (int)v.size();
+	string line = getLine(size, '-', interval) + '-';
+	// 0
+	SetConsoleCursorPosition(stdHandle, cursor); cursor.Y++;
+	cout << setw(interval - 2) << '\\' << setw(2) << left << secondName << right;
+	for (int i = 0; i < size; i++) cout << setw(interval) << i;
+	// 1
+	SetConsoleCursorPosition(stdHandle, cursor); cursor.Y++;
+	cout << setw((interval--) - 2) << firstName << setw(2) << left << '\\' << right << line << endl;
+	// 2
+	for (int ia = 0; ia < size; ia++) {
+		SetConsoleCursorPosition(stdHandle, cursor); cursor.Y++;
+		cout << setw(interval) << ia << setw(2) << left << "| " << right;
+		for (int ib = 0; ib < size; ib++) {
+			cout << setw(interval);
+			if (contains(v, ia, ib)) showGreenStr("1");
+			else cout << "0";
+			cout << (ib + 1 < size ? ',' : ' ');
+		}
+		cout << '|' << endl;
+	}
+	//8
+	SetConsoleCursorPosition(stdHandle, cursor); cursor.Y++;
+	cout << setw(interval + 1) << ' ' << line << endl;
+}
+// Нарисовать один раз
+void draw(HWND hwnd, HDC hdc, const vector<Pair>& v, bool cls = true) {
+	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbiInfo);
+	if (cls) clear(100, csbiInfo.dwSize.Y + 10, true, 0, 10);
+	Sleep(50); // Задержка для корректного отображения изображения
+	// coordinatePlane(hwnd, hdc, v, 50, 200);
+}
+// Проверка на монотонность
+bool isMonotone(const vector<Pair>& v) {
+	bool f(0), s(0);
+	for (int i = 0, size = v.size(); i < size - 1; ++i) {
+		if (v[i].b < v[i + 1].b)
+			if (f) return false;
+			else s = true;
+		if (v[i].b > v[i + 1].b)
+			if (s) return false;
+			else f = true;
+	}
+	return true;
+	/*if (!f && !s); // Все элементы равны
+	else if (f); // Убывающая
+	else;*/ // Возрастающая
+}
+
+// Цикл автоматического отображения
+void draw(const vector<Pair>& ab, MySet a, MySet b, const int& size) {
+	stringstream stringStreamAB;
+	stringStreamAB <<
+		"Для повторной отрисовки графики нажмите клавишу [ENTER].\n"
+		"Для окончания анализирования и дальнейшего продолжения\nнажмите клавишу [ESC].\n\n" <<
+		getStrSet(ab, "Декартовое произведение множеств A и B");
+	bool isRunning{ false }; // флаг продолжения работы
+	HANDLE rHnd = GetStdHandle(STD_INPUT_HANDLE);
+	HWND hwnd = GetConsoleWindow();
+	HDC hdc = GetWindowDC(hwnd);
+	DWORD numEvents{ 0 }; // Количество непрочитанных сообщений
+	DWORD numEventsRead{ 0 }; // Количество прочитанных сообщений
+	if (hwnd == NULL) cout << "Error Find Window" << endl; // Если произойдёт ошибка
+	else if (hdc == NULL) cout << "Error DC Window" << endl; // Если произойдёт ошибка
+	else {
+		const int x = 110;
+		isRunning = true;
+		headline(false);
+		show(a, 'A', b, 'B', size);
+		int y = 3;
+		showMatrix(ab, 'A', 'B', &x, &y);
+		cout << endl << endl;
+		show(stringStreamAB.str(), &x, nullptr);
+		WORD fRed = FOREGROUND_RED;
+		WORD fGreen = FOREGROUND_GREEN;
+		if (a.isDuplicate())
+			show("Данное отношение не является функцией!", &x, nullptr, &fRed);
+		else {
+			show("Данное отношение является функцией!", &x, nullptr, &fGreen);
+			if (b.isDuplicate())
+				show("Данная функция не является биективной!", &x, nullptr, &fRed);
+			else
+				show("Данная функция является биективной!", &x, nullptr, &fGreen);
+			if (isMonotone(ab))
+				show("Данная функция является монотонной!", &x, nullptr, &fGreen);
+			else
+				show("Данная функция не является монотонной!", &x, nullptr, &fRed);
+		}
+		draw(hwnd, hdc, ab, false);
+	}
+	while (isRunning) {
+		// Определить количество событий консоли
+		GetNumberOfConsoleInputEvents(rHnd, &numEvents);
+		if (numEvents != 0) {
+			// Выделение памяти для хранения данных о событиях
+			INPUT_RECORD* eventBuffer = new INPUT_RECORD[numEvents];
+			// Извлечение данных во временный буфер событий eventBuffer[]
+			ReadConsoleInput(rHnd, eventBuffer, numEvents, &numEventsRead);
+			// Цикл по всем извлеченным событиям
+			for (DWORD i = 0; i < numEventsRead; ++i) {
+				if (eventBuffer[i].EventType == KEY_EVENT) {
+					if (eventBuffer[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
+						isRunning = false; // Выход, если нажата клавиша ESC
+					else if (eventBuffer[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN)
+						draw(hwnd, hdc, ab, true);
+				}
+				if (eventBuffer[i].EventType == FOCUS_EVENT)
+					draw(hwnd, hdc, ab, true);
+				else if (eventBuffer[i].EventType == MOUSE_EVENT) { /*Обработка событий мыши*/ }
+			}
+			delete[] eventBuffer;
+		}
+	}
+	ReleaseDC(hwnd, hdc); // Освобождаем дескрипторы
+}
+
+int main() {
+	system("color F0");
+	setMaxConsoleSize();
+	setlocale(LC_ALL, "Russian");
+	SetConsoleTitle(L"функции------"); // Обзываем окно консоли
+	srand((unsigned int)time(NULL));
+	headline(false);
+	const int minSizeSet = 1, maxSizeSet = 10; // Границы размера множеств
+	int n = inputInRange(&minSizeSet, &maxSizeSet, sInputSizeAB);
+	headline(true);
+	signed int currentMinNumberSet, currentMaxNumberSet;		// Действительные границы диапазона случайных значений
+	getRange(currentMinNumberSet, currentMaxNumberSet, n, allRange, sInitAB);
+	// Множества А и В
+	MySet A, B;
+	A.fill(n, currentMinNumberSet, currentMaxNumberSet, true); 	// Инициализация множества А
+	B.fill(n, currentMinNumberSet, currentMaxNumberSet, true);	// Инициализация множества В
+	int option;
+	do {
+		setMaxConsoleSize();
+		headline(true);
+		showRange(currentMinNumberSet, currentMaxNumberSet, sRangeAB);
+		show(A, 'A', B, 'B', n);
+		cout << endl;
+		// Получить значение из меню - menu
+		option = getChoiceMenu(menu);
+		headline(true);
+		switch (option) {
+			// Изменить левую границу диапазона (а)
+			// Перегенерировать оба множества
+		case 3:
+			// Перегенерировать первое множество
+		case 1:
+			A.fill(n, currentMinNumberSet, currentMaxNumberSet, true);
+			if (option == 5) break;
+			// Перегенерировать второе множество
+		case 2:
+			B.fill(n, currentMinNumberSet, currentMaxNumberSet, true);
+			break;
+			// Начать выполнение заданий
+		case 4: {
+			MySet X, Y; // Подмножества Х и Y
+			headline(true);
+			int m = inputInRange(new int{ 1 }, new int{ n - 1 }, sInputSizeXY);
+			headline(true);
+			for (int i = n - 1, size = i - m; i > size; i--) {
+				X.insert(A[i], true);
+				Y.insert(B[i], true);
+			}
+			headline(true);
+			showRange(currentMinNumberSet, currentMaxNumberSet, sRangeXY);
+			show(A, 'A', B, 'B', n);
+			show(X, 'X', Y, 'Y', m);
+			vector<Pair> XY;
+			multiplySet(XY, X, Y);
+			string strXY = getStrSet(XY, "Декартовое произведение множеств X и Y");
+			vector<Pair> AB;
+			randMultiplySet(AB, A, B, n);
+			setMaxConsoleSize(0, 100);
+			cout << strXY << endl;
+			system("pause");
+			system("cls");
+			draw(AB, A, B, n);
+			break; }
+		case 5:  cout << "Завершение работы программы!" << endl; break;
+		default: cout << "Неизвестное перечисление: " << option << endl; break;
+		}
+	} while (option >= 1 && option <= 8);
+
+	cout << endl;
+	system("pause");
+	return 0;
+}
